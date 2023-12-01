@@ -33,7 +33,7 @@ export const getPosts = async () => {
   }
 `  
 
-  const result = await request(graphqlAPI, query);
+  const result = await request(graphqlAPI!, query);
 
   return result.postsConnection.edges;
 
@@ -41,7 +41,8 @@ export const getPosts = async () => {
 };
 
 
-export const getPostDetails = async (slug) => {
+export const getPostDetails = async (slug: string | undefined) => {
+  if (slug !== undefined) {
   const query = gql`
     query GetPostDetails($slug : String!) {
       post(where: {slug: $slug}) {
@@ -69,14 +70,18 @@ export const getPostDetails = async (slug) => {
       }
     }
   `;
-
-  const result = await request(graphqlAPI, query, { slug });
+  const result = await request(graphqlAPI!, query, { slug });
 
   return result.post;
+} else {
+  console.error('Slug is undefined');
+  return null; // or handle it according to your application's logic
+}
 };
 
 
-export const getRecentPosts = async () => {
+export const getRecentPosts = async (categories: string[] | undefined, slug: string | undefined) => {
+  if (categories !== undefined && slug !== undefined) {
   const query = gql`
     query GetPostDetails() {
       posts(
@@ -92,30 +97,36 @@ export const getRecentPosts = async () => {
       }
     }
   `;
-  const result = await request(graphqlAPI, query);
+  const result = await request(graphqlAPI!, query, { slug, categories });
 
-  return result.posts;
+    return result.posts;
+  } else {
+    console.error('Categories or slug is undefined');
+    return null; // or handle it according to your application's logic
+  }
 };
 
-export const getSimilarPosts = async ( categories , slug) => {
-  const query = gql`
-    query GetPostDetails($slug: String!, $categories: [String!]) {
-      posts(
-        where: {slug_not: $slug, AND: {categories_some: {slug_in: $categories}}}
-        last: 3
-      ) {
-        title
-        featuredImage {
-          url
+export const getSimilarPosts = async (categories: string[] | undefined, slug: string | undefined) => {
+  if (categories !== undefined && slug !== undefined) {
+    const query = gql`
+      query GetSimilarPosts($slug: String!, $categories: [String!]) {
+        posts(where: { slug_not: $slug, AND: { categories_some: { slug_in: $categories } } }, last: 3) {
+          title
+          featuredImage {
+            url
+          }
+          createdAt
+          slug
         }
-        createdAt
-        slug
       }
-    }
-  `;
-  const result = await request(graphqlAPI, query ,{ categories , slug});
+    `;
+    const result = await request(graphqlAPI!, query, { slug, categories });
 
-  return result.posts;
+    return result.posts;
+  } else {
+    console.error('Categories or slug is undefined');
+    return null; // or handle it according to your application's logic
+  }
 };
 
 export const getCategories = async () => {
@@ -128,12 +139,12 @@ export const getCategories = async () => {
     }
   `;
 
-  const result = await request(graphqlAPI, query);
+  const result = await request(graphqlAPI!, query);
 
-  return result.categories;
+  return result.postsConnection.edges;
 };
 
-export const submitComment = async (obj) => {
+export const submitComment = async (obj: any) => {
   const result = await fetch('/api/comments', {
     method: 'POST',
     headers: {
@@ -145,18 +156,23 @@ export const submitComment = async (obj) => {
   return result.json();
 };
 
-export const getComments = async (slug) => {
-  const query = gql`
-    query GetComments($slug:String!) {
-      comments(where: {post: {slug:$slug}}){
-        name
-        createdAt
-        comment
+export const getComments = async (slug: string | undefined) => {
+  if (slug !== undefined) {
+    const query = gql`
+      query GetComments($slug: String!) {
+        comments(where: { post: { slug: $slug } }) {
+          name
+          createdAt
+          comment
+        }
       }
-    }
-  `;
+    `;
 
-  const result = await request(graphqlAPI, query, { slug });
+    const result = await request(graphqlAPI!, query, { slug });
 
-  return result.comments;
+    return result.comments;
+  } else {
+    console.error('Slug is undefined');
+    return null; // or handle it according to your application's logic
+  }
 };
